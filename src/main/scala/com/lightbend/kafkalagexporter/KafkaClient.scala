@@ -28,9 +28,9 @@ object KafkaClient {
   val CommonClientConfigRetryBackoffMs = 1000 // longer interval between retry attempts so we don't overload clusters (default = 100ms)
   val ConsumerConfigAutoCommit = false
 
-  def apply(cluster: KafkaCluster, groupId: String, clientTimeout: FiniteDuration)(implicit ec: ExecutionContext): KafkaClientContract = {
-    val consumer = new ConsumerKafkaClient(createConsumerClient(cluster, groupId, clientTimeout), clientTimeout)
-    val adminKafkaClient = new AdminKafkaClient(createAdminClient(cluster, clientTimeout), clientTimeout)
+  def apply(cluster: KafkaCluster, groupId: String, clientTimeout: FiniteDuration, secProps: Map[String, String] = Map.empty)(implicit ec: ExecutionContext): KafkaClientContract = {
+    val consumer = new ConsumerKafkaClient(createConsumerClient(cluster, groupId, clientTimeout, secProps), clientTimeout)
+    val adminKafkaClient = new AdminKafkaClient(createAdminClient(cluster, clientTimeout, secProps), clientTimeout)
     new KafkaClient(cluster, consumer, adminKafkaClient)(ec)
   }
 
@@ -55,7 +55,7 @@ object KafkaClient {
     p.future
   }
 
-  private def createAdminClient(cluster: KafkaCluster, clientTimeout: FiniteDuration): AdminClient = {
+  private def createAdminClient(cluster: KafkaCluster, clientTimeout: FiniteDuration, secProps: Map[String, String]): AdminClient = {
     val props = new Properties()
     // AdminClient config: https://kafka.apache.org/documentation/#adminclientconfigs
     cluster.adminClientProperties foreach { case (k, v) => props.setProperty(k, v)}
@@ -63,10 +63,11 @@ object KafkaClient {
     props.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, clientTimeout.toMillis.toString)
     props.put(AdminClientConfig.RETRIES_CONFIG, AdminClientConfigRetries.toString)
     props.put(AdminClientConfig.RETRY_BACKOFF_MS_CONFIG, CommonClientConfigRetryBackoffMs.toString)
+    secProps.foreach(e => props.put(e._1, e._2))
     AdminClient.create(props)
   }
 
-  private def createConsumerClient(cluster: KafkaCluster, groupId: String, clientTimeout: FiniteDuration): KafkaConsumer[Byte, Byte] = {
+  private def createConsumerClient(cluster: KafkaCluster, groupId: String, clientTimeout: FiniteDuration, secProps: Map[String, String]): KafkaConsumer[Byte, Byte] = {
     val props = new Properties()
     val deserializer = (new ByteArrayDeserializer).getClass.getName
     // KafkaConsumer config: https://kafka.apache.org/documentation/#consumerconfigs
@@ -79,6 +80,7 @@ object KafkaClient {
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, deserializer)
     props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer)
     props.put(ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, CommonClientConfigRetryBackoffMs.toString)
+    secProps.foreach(e => props.put(e._1, e._2))
     new KafkaConsumer(props)
   }
 

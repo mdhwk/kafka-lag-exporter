@@ -21,8 +21,10 @@ object AppConfig {
     val graphiteConfig: Option[GraphiteConfig] = (
       for (host <- Try(c.getString("reporters.graphite.host"));
            port <- Try(c.getInt("reporters.graphite.port")),
-             ) yield GraphiteConfig(
-               host, port, Try(c.getString("reporters.graphite.prefix")).toOption)).toOption
+      )
+    yield GraphiteConfig(
+      host, port, Try(c.getString("reporters.graphite.prefix")).toOption)
+    ).toOption
     val pollInterval = c.getDuration("poll-interval").toScala
     val lookupTableSize = c.getInt("lookup-table-size")
     val prometheusPortLegacy = Try(c.getInt("port")).toOption
@@ -30,6 +32,12 @@ object AppConfig {
     val prometheusConfig = (prometheusPortNew orElse prometheusPortLegacy).map { port => PrometheusConfig(port) }
     val clientGroupId = c.getString("client-group-id")
     val kafkaClientTimeout = c.getDuration("kafka-client-timeout").toScala
+    val securityOpts = Try {
+      val opts = c.getConfig("security-options")
+      opts.entrySet().asScala.map(
+        entry => (entry.getKey, entry.getValue.unwrapped().toString)
+      ).toMap[String, String]
+    }.getOrElse(Map.empty[String, String])
     val clusters = c.getConfigList("clusters").asScala.toList.map { clusterConfig =>
       val consumerProperties =
         if (clusterConfig.hasPath("consumer-properties"))
@@ -61,6 +69,11 @@ object AppConfig {
         clusterConfig.getStringList("topic-blacklist").asScala.toList
       else KafkaCluster.TopicBlacklistDefault
 
+      val securityOpt = if (clusterConfig.hasPath("security-option")) {
+        clusterConfig.getString("security-option")
+      }
+      else ""
+
       KafkaCluster(
         clusterConfig.getString("name"),
         clusterConfig.getString("bootstrap-brokers"),
@@ -69,12 +82,14 @@ object AppConfig {
         topicBlacklist,
         consumerProperties,
         adminClientProperties,
-        labels
+        labels,
+        securityOpt
       )
     }
+
     val strimziWatcher = c.getString("watchers.strimzi").toBoolean
     val metricWhitelist = c.getStringList("metric-whitelist").asScala.toList
-    AppConfig(pollInterval, lookupTableSize, clientGroupId, kafkaClientTimeout, clusters, strimziWatcher, metricWhitelist, prometheusConfig, graphiteConfig)
+    AppConfig(pollInterval, lookupTableSize, clientGroupId, kafkaClientTimeout, clusters, strimziWatcher, metricWhitelist, prometheusConfig, graphiteConfig, securityOpts)
   }
 
   // Copied from Alpakka Kafka
@@ -116,7 +131,8 @@ final case class KafkaCluster(name: String, bootstrapBrokers: String,
                               topicBlacklist: List[String] = KafkaCluster.TopicBlacklistDefault,
                               consumerProperties: Map[String, String] = Map.empty,
                               adminClientProperties: Map[String, String] = Map.empty,
-                              labels: Map[String, String] = Map.empty) {
+                              labels: Map[String, String] = Map.empty,
+                              securityOpt: String = "") {
   override def toString(): String = {
     s"""
        |  Cluster name: $name
@@ -127,24 +143,30 @@ final case class KafkaCluster(name: String, bootstrapBrokers: String,
      """.stripMargin
   }
 }
+
 final case class AppConfig(pollInterval: FiniteDuration, lookupTableSize: Int, clientGroupId: String,
                            clientTimeout: FiniteDuration, clusters: List[KafkaCluster], strimziWatcher: Boolean,
                            metricWhitelist: List[String],
                            prometheusConfig: Option[PrometheusConfig],
-                           graphiteConfig: Option[GraphiteConfig]) {
+                           graphiteConfig: Option[GraphiteConfig],
+                           securityOpts: Map[String, String]) {
   override def toString(): String = {
     val graphiteString =
-      graphiteConfig.map { graphite => s"""
-        |Graphite: 
-        |  host: ${graphite.host}
-        |  port: ${graphite.port}
-        |  prefix: ${graphite.prefix}
-        """.stripMargin }.getOrElse("")
+      graphiteConfig.map { graphite =>
+        s"""
+           |Graphite:
+           |  host: ${graphite.host}
+           |  port: ${graphite.port}
+           |  prefix: ${graphite.prefix}
+        """.stripMargin
+      }.getOrElse("")
     val prometheusString =
-      prometheusConfig.map { prometheus => s"""
-        |Prometheus: 
-        |  port: ${prometheus.port}
-        """.stripMargin }.getOrElse("")
+      prometheusConfig.map { prometheus =>
+        s"""
+           |Prometheus:
+           |  port: ${prometheus.port}
+        """.stripMargin
+      }.getOrElse("")
     val clusterString =
       if (clusters.isEmpty)
         "  (none)"

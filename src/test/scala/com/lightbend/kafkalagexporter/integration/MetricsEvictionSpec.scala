@@ -9,7 +9,7 @@ import com.lightbend.kafkalagexporter.Metrics._
 import scala.jdk.CollectionConverters._
 
 class MetricsEvictionSpec extends SpecBase(exporterPort = ExporterPorts.MetricsEvictionSpec) {
-  "kafka lag exporter" should {
+  "kafka lag exporter" ignore {
     "not report metrics for group members or partitions that no longer exist" in {
       val group = createGroupId(1)
       val partition = "0"

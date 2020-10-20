@@ -1,12 +1,13 @@
 import sbt._
 
 object Version {
-  val Scala      = "2.12.11"
-  val Akka       = "2.6.8"
-  val Prometheus = "0.8.1"
-  val Fabric8    = "4.9.1"
-  val Kafka      = "2.5.0"
+  val Scala         = "2.12.11"
+  val Akka          = "2.6.8"
+  val Prometheus    = "0.8.1"
+  val Fabric8       = "4.9.1"
+  val Kafka         = "2.5.0"
   val EmbeddedKafka = "2.4.1"
+  val Gsm           = "1.2.1"
 }
 
 object Dependencies {
@@ -36,7 +37,7 @@ object Dependencies {
   val Fabric8Model          = "io.fabric8"              %  "kubernetes-model"          % Version.Fabric8
   val Fabric8Client         = "io.fabric8"              %  "kubernetes-client"         % Version.Fabric8
   val ScalaJava8Compat      = "org.scala-lang.modules"  %% "scala-java8-compat"        % "0.9.0"
-
+  val Gsm                   = "com.google.cloud"        %  "google-cloud-secretmanager" % Version.Gsm
   /* Test */
   val ScalaTest             = "org.scalatest"           %% "scalatest"                 % "3.0.5"             % Test
   val AkkaTypedTestKit      = "com.typesafe.akka"       %% "akka-actor-testkit-typed"  % Version.Akka        % Test

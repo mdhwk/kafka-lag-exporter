@@ -12,7 +12,7 @@ import scala.util.Try
 
 class IntegrationSpec extends SpecBase(exporterPort = ExporterPorts.IntegrationSpec) {
 
-  "kafka lag exporter" should {
+  "kafka lag exporter" ignore {
     val group = createGroupId(1)
     val partition = "0"
 

@@ -30,11 +30,13 @@ object MainApp extends App {
     val appConfig = AppConfig(config)
 
     val clientCreator = (cluster: KafkaCluster) =>
-      KafkaClient(cluster, appConfig.clientGroupId, appConfig.clientTimeout)(kafkaClientEc)
-    var endpointCreators : List[KafkaClusterManager.NamedCreator] = List()
+      KafkaClient(cluster, appConfig.clientGroupId, appConfig.clientTimeout, Security(cluster.securityOpt, appConfig.securityOpts))(kafkaClientEc)
+
+    Security.close()
+    var endpointCreators: List[KafkaClusterManager.NamedCreator] = List()
     appConfig.prometheusConfig.foreach { prometheus =>
       val prometheusCreator = KafkaClusterManager.NamedCreator(
-        "prometheus-lag-reporter", 
+        "prometheus-lag-reporter",
         (() => PrometheusEndpointSink(
           Metrics.definitions, appConfig.metricWhitelist, appConfig.clustersGlobalLabels(), new HTTPServer(prometheus.port), CollectorRegistry.defaultRegistry
         ))
