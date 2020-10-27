@@ -253,6 +253,7 @@ General Configuration (`kafka-lag-exporter{}`)
 | `clusters`                  | `[]`               | A statically defined list of Kafka connection details.  This list is optional if you choose to use the Strimzi auto-discovery feature |
 | `watchers`                  | `{}`               | Settings for Kafka cluster "watchers" used for auto-discovery.                                                                        |
 | `metric-whitelist`          | `[".*"]`           | Regex of metrics to be exposed via Prometheus endpoint. Eg. `[".*_max_lag.*", "kafka_partition_latest_offset"]`                       |
+| `security-configs`          | `{}`               | Map of security configuration, currently only support google secret manager. Ex. `{ gsm = { development = { projectId = "<your_gcp_id>" secretId = "<your_gsm_id>" }}}`                       |
 
 Kafka Cluster Connection Details (`kafka-lag-exporter.clusters[]`)
 
@@ -266,6 +267,7 @@ Kafka Cluster Connection Details (`kafka-lag-exporter.clusters[]`)
 | `consumer-properties`     | `{}`        | No       | A map of key value pairs used to configure the `KafkaConsumer`. See the [Consumer Config](https://kafka.apache.org/documentation/#consumerconfigs) section of the Kafka documentation for options. |
 | `admin-client-properties` | `{}`        | No       | A map of key value pairs used to configure the `AdminClient`. See the [Admin Config](https://kafka.apache.org/documentation/#adminclientconfigs) section of the Kafka documentation for options.   |
 | `labels`                  | `{}`        | No       | A map of key value pairs will be set as additional custom labels per cluster for all the metrics in prometheus.                                                                                    |
+| `security-config`         | `""`        | No       | Key to which security config to use when fetching security related info. `= "gsm.development"`                                                                                 |
 
 Watchers (`kafka-lag-exporters.watchers{}`)
 

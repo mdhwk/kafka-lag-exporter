@@ -3,4 +3,5 @@ target
 *.tgz
 *.iml
 application.conf
-!examples/standalone/application.conf
+!config/config.conf
+**/**/.DS_Store
